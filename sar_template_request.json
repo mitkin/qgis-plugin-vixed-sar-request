@@ -1,27 +1,48 @@
 {
-	"interval": "48h",
+    "interval": "24h",
     "processor": "SAR",
-    "processor_settings":
-	{
-		"compress": "True",
-		"crs": "EPSG:3395",
-		"platformname": "Sentinel-1",
-		"producttype": "GRD",
-		"roi": "bbox",
-		"box_radius": 600000,
-		"center_lat": 81.00,
-		"center_lon": 0.00,
-		"sensoroperationalmode": "EW",
-		"spatial_resolution": 500,
-		"time_delta_hours": 24
+    "processor_settings": {
+        "compress": "True",
+        "crs": "EPSG:3857",
+        "platformname": "Sentinel-1",
+        "producttype": "GRD",
+        "roi": {
+            "coordinates": [
+                [
+                    [
+                        -9.954874050103166,
+                        84.90358049250898
+                    ],
+                    [
+                        3.350877020730215,
+                        80.49145938744702
+                    ],
+                    [
+                        38.483172690086676,
+                        79.02782330052757
+                    ],
+                    [
+                        59.008819416329565,
+                        83.76614133556653
+                    ],
+                    [
+                        -9.954874050103166,
+                        84.90358049250898
+                    ]
+                ]
+            ],
+            "type": "Polygon"
+        },
+        "sensoroperationalmode": "EW",
+        "spatial_resolution": 550,
+        "time_delta_hours": 24
     },
     "send_to": [
-        "khaakon@khaakon.uuplus.net"
-		
+        "user@example.com"
     ],
     "start": [
-        "2019-07-29T19:11:00Z"
+        "1900-05-21T20:00:00Z"
     ],
-    "stop": "2019-08-15T23:00:00Z",
+	"stop": "1900-05-23T19:01:00Z",
 	"run_now": true
 }

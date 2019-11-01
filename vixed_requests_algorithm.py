@@ -43,6 +43,11 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterNumber)
 
+from pyproj import Proj, transform
+import json
+import sys, os
+
+from qgis.utils import iface
 
 # class VixedRequestsAlgorithm(QgsProcessingAlgorithm):
 class VixedRequestsAlgorithm(QgisAlgorithm):
@@ -69,8 +74,12 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
     OPTIONS = 'OPTIONS'
     PROCESSORS = "PROCESSORS"
     ESTIMATED_FILESIZE = "Estimated filesize"
-    RESOLUTION = "RESOLUTION"
+    RESOLUTION = 'RESOLUTION'
     TIMEDELTA = 'TIMEDELTA'
+    RECIPIENTS = "RECIPIENTS"
+    EXPORTCRS = "epsg:3857"
+    CRS = "CRS"
+    
     #
     # def group(self):
     #     return self.tr('Vixed')
@@ -85,22 +94,14 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         with some other properties.
         """
 
+        self.BASEDIR, self.FILENAME = os.path.split(os.path.abspath(__file__))
+
         processors = [self.tr('SAR')]
 
         self.addParameter(QgsProcessingParameterEnum(
             self.PROCESSORS,
             self.tr('Vixed Processors'),
             options=processors, defaultValue="SAR"))
-
-        # We add the input vector features source. It can have any kind of
-        # geometry.
-        # self.addParameter(
-        #     QgsProcessingParameterFeatureSource(
-        #         self.INPUT,
-        #         self.tr('Input layer'),
-        #         [QgsProcessing.TypeVectorAnyGeometry]
-        #     )
-        # )
 
         self.addParameter(
             QgsProcessingParameterExtent(
@@ -109,13 +110,14 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
             )
         )
 
-        self.addParameter(QgsProcessingParameterNumber(
-            self.RESOLUTION,
-            self.tr(
-                'Spatial resolution (meters per pixel)'),
-            defaultValue=500,
-            minValue=50,
-            type=QgsProcessingParameterNumber.Integer
+        self.addParameter(
+            QgsProcessingParameterNumber(
+                self.RESOLUTION,
+                self.tr(
+                    'Spatial resolution (meters per pixel)'),
+                defaultValue=500,
+                minValue=50,
+                type=QgsProcessingParameterNumber.Integer
         ))
 
         self.addParameter(QgsProcessingParameterNumber(
@@ -127,62 +129,59 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
             type=QgsProcessingParameterNumber.Integer
         ))
 
+        try:
+            with open(os.path.join(self.BASEDIR, 'tempdata'), mode='r') as tf:
+                temp_dict = json.loads(tf.read())
+                default_recipient = temp_dict['send_to']
+        except:
+            default_recipient = "user@example.com" 
+
+        self.addParameter(QgsProcessingParameterString(
+            self.RECIPIENTS,
+            self.tr('Send to email address'),
+            defaultValue = default_recipient,
+            multiLine = False
+
+        ))
+
         self.addParameter(
             QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Sar request for Vixed'), self.tr('JSON files (*.json)')))
+
 
     def processAlgorithm(self, parameters, context, feedback):
         """
         Here is where the processing itself takes place.
         """
 
-        # Retrieve the feature source and sink. The 'dest_id' variable is used
-        # to uniquely identify the feature sink, and must be included in the
-        # dictionary returned by the processAlgorithm function.
-        # source = self.parameterAsSource(parameters, self.INPUT, context)
-        # (sink, dest_id) = self.parameterAsSink(parameters, self.OUTPUT,
-        #         context, source.fields(), source.wkbType(), source.sourceCrs())
-        #
-        # # Compute the number of steps to display within the progress bar and
-        # # get features from source
-        # total = 100.0 / source.featureCount() if source.featureCount() else 0
-        # features = source.getFeatures()
-        #
-        # for current, feature in enumerate(features):
-        #     # Stop the algorithm if cancel button has been clicked
-        #     if feedback.isCanceled():
-        #         break
-        #
-        #     # Add a feature in the sink
-        #     sink.addFeature(feature, QgsFeatureSink.FastInsert)
-        #
-        #     # Update the progress bar
-        #     feedback.setProgress(int(current * total))
+        self.CRS = iface.mapCanvas().mapSettings().destinationCrs().authid()
 
-        # Return the results of the algorithm. In this case our only result is
-        # the feature sink which contains the processed features, but some
-        # algorithms may return multiple feature sinks, calculated numeric
-        # statistics, etc. These should all be included in the returned
-        # dictionary, with keys matching the feature corresponding parameter
-        # or output names.
-        # return {self.OUTPUT: dest_id}
-
-        contents = self.EXTENT
-
-        # contents = load_request_file
-        # update extent
-
-        extent = self.parameterAsFileOutput(parameters, self.EXTENT, context)
-
-        print("CONTENTS: ", contents)
+        dirname, filename = os.path.split(os.path.abspath(__file__))
+        
+        extent = self.parameterAsExtent(parameters, self.EXTENT, context)
+        with open(os.path.join(dirname, 'sar_template_request.json'), mode='r') as json_template_fh:
+            template_dict = json.load(json_template_fh)
 
         output = self.parameterAsFileOutput(parameters, self.OUTPUT, context)
+        send_to = self.parameterAsString(parameters, self.RECIPIENTS, context)
+        
+        resolution = self.parameterAsInt(parameters, self.RESOLUTION, context)
 
+        template_dict['processor_settings']['spatial_resolution'] = self.parameterAsInt(parameters, self.RESOLUTION, context)
+        template_dict['processor_settings']['time_delta_hours'] = self.parameterAsInt(parameters, self.TIMEDELTA, context)
+        template_dict['processor_settings']['roi'] = self.wktPolygonToDict(extent)
+        template_dict['processor_settings']['crs'] = self.EXPORTCRS
+        template_dict['send_to'] = [ send_to ]
+
+
+        with open(os.path.join(self.BASEDIR, 'tempdata'), mode='w') as tf:
+            json.dump({"send_to": send_to}, tf)
+        
         with open(output, mode="w") as output_json:
-            output_json.write(extent)
+            json.dump(template_dict, output_json)
 
-        filesize = "20MB"
+        filesize = self.calcFileSize(extent, resolution)
 
-        return {self.OUTPUT: output, self.ESTIMATED_FILESIZE: filesize}
+        return {self.OUTPUT: output, self.ESTIMATED_FILESIZE: "{:0.2f} MB".format(filesize), self.CRS: self.CRS}
 
     def name(self):
         """
@@ -218,8 +217,41 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         """
         return 'Vixed'
 
+
     def tr(self, string):
         return QCoreApplication.translate('Processing', string)
 
+
     def createInstance(self):
         return VixedRequestsAlgorithm()
+
+
+    def wktPolygonToDict(self, extent):
+        
+        pr = Proj(init=self.CRS)
+
+        if self.CRS.upper() != "EPSG:4326":
+            xmin, ymin = pr(extent.xMinimum(), extent.yMinimum(), inverse=True)
+            xmax, ymax = pr(extent.xMaximum(), extent.yMaximum(), inverse=True)
+        else:
+            xmin, ymin = (extent.xMinimum(), extent.yMinimum())
+            xmax, ymax = (extent.xMaximum(), extent.yMaximum())
+
+        polygon = { "coordinates" : [
+            [
+            [xmin, ymin],
+            [xmax, ymin],
+            [xmax, ymax],
+            [xmin, ymax],
+            [xmin, ymin]
+            ]
+        ], "type": "Polygon" }
+        
+        return polygon
+    
+    def calcFileSize(self, extent, resolution, compression_ratio=40, internal_crs="epsg:4326", channels_no=3):
+
+        filesize = ( extent.area() / (float(resolution) ** 2) ) * 8 / 1e6 / (compression_ratio * channels_no)
+
+        return filesize
+
