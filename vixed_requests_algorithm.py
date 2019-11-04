@@ -252,9 +252,23 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         
         return polygon
     
-    def calcFileSize(self, extent, resolution, compression_ratio=40, internal_crs="epsg:4326", channels_no=3):
+    def calcFileSize(self, extent, resolution, compression_ratio=100, channels_no=1):
 
-        filesize = ( extent.area() / (float(resolution) ** 2) ) * 8 / 1e6 / (compression_ratio * channels_no)
+        if self.CRS.upper() == "EPSG:4326":
+            pr = Proj(init="EPSG:3857")
+            xmin, ymin = pr(extent.xMinimum(), extent.yMinimum())
+            xmax, ymax = pr(extent.xMaximum(), extent.yMaximum())
+        else:
+            xmin, ymin = (extent.xMinimum(), extent.yMinimum())
+            xmax, ymax = (extent.xMaximum(), extent.yMaximum())
+
+
+
+        width = xmax - xmin
+        height = ymax - ymin
+
+        area = width * height
+        filesize = (area / (float(resolution) ** 2) ) * 8 / 1e6 / (compression_ratio / channels_no)
 
         return filesize
 

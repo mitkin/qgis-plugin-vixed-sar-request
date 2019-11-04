@@ -36,4 +36,4 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .vixed_requests import VixedRequestsPlugin
-    return VixedRequestsPlugin()
+    return VixedRequestsPlugin(iface)
