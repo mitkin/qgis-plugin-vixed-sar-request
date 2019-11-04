@@ -43,6 +43,9 @@ from qgis.core import (QgsProcessing,
                        QgsProcessingParameterEnum,
                        QgsProcessingParameterNumber)
 
+from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtGui import QIcon
+
 from pyproj import Proj, transform
 import json
 import sys, os
@@ -145,7 +148,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         ))
 
         self.addParameter(
-            QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Sar request for Vixed'), self.tr('JSON files (*.json)')))
+            QgsProcessingParameterFileDestination(self.OUTPUT, self.tr('Output request file (JSON)'), self.tr('JSON files (*.json)')))
 
 
     def processAlgorithm(self, parameters, context, feedback):
@@ -191,7 +194,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'Generate Vixed SAR request form'
+        return 'Generate SAR request form'
 
     def displayName(self):
         """
@@ -215,7 +218,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
         contain lowercase alphanumeric characters only and no spaces or other
         formatting characters.
         """
-        return 'Vixed'
+        return ''
 
 
     def tr(self, string):

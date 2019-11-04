@@ -34,6 +34,10 @@ import os
 import sys
 import inspect
 
+from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtGui import QIcon
+import processing
+
 from qgis.core import (QgsProcessingAlgorithm,
                        QgsApplication,
                        QgsProcessingParameterExtent,
@@ -49,8 +53,9 @@ if cmd_folder not in sys.path:
 
 class VixedRequestsPlugin(object):
 
-    def __init__(self):
+    def __init__(self, iface):
         self.provider = None
+        self.iface = iface
 
     def initProcessing(self):
         """Init Processing provider for QGIS >= 3.8."""
@@ -60,5 +65,18 @@ class VixedRequestsPlugin(object):
     def initGui(self):
         self.initProcessing()
 
+        icon = os.path.join(os.path.join(cmd_folder, 'satellite-32.ico'))
+        self.action = QAction(
+            QIcon(icon),
+            u"Generate SAR request form", self.iface.mainWindow())
+        self.action.triggered.connect(self.run)
+        self.iface.addPluginToMenu(u"&Vixed", self.action)
+        self.iface.addToolBarIcon(self.action)
+
     def unload(self):
         QgsApplication.processingRegistry().removeProvider(self.provider)
+        self.iface.removePluginMenu(u"&Vixed", self.action)
+        self.iface.removeToolBarIcon(self.action)
+
+    def run(self):
+        processing.execAlgorithmDialog("Vixed:Generate SAR request form")

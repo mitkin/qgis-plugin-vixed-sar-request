@@ -63,7 +63,7 @@ class VixedRequestsProvider(QgsProcessingProvider):
         string should be a unique, short, character only string, eg "qgis" or
         "gdal". This string should not be localised.
         """
-        return ''
+        return 'Vixed'
 
     def name(self):
         """
@@ -72,7 +72,7 @@ class VixedRequestsProvider(QgsProcessingProvider):
 
         This string should be short (e.g. "Lastools") and localised.
         """
-        return self.tr('')
+        return self.tr('Vixed')
 
     def icon(self):
         """
