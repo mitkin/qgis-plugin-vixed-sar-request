@@ -68,7 +68,7 @@ class VixedRequestsPlugin(object):
         icon = os.path.join(os.path.join(cmd_folder, 'satellite-32.ico'))
         self.action = QAction(
             QIcon(icon),
-            u"Generate SAR request form", self.iface.mainWindow())
+            u"Generate CHLA request", self.iface.mainWindow())
         self.action.triggered.connect(self.run)
         self.iface.addPluginToMenu(u"&Vixed", self.action)
         self.iface.addToolBarIcon(self.action)
@@ -79,4 +79,4 @@ class VixedRequestsPlugin(object):
         self.iface.removeToolBarIcon(self.action)
 
     def run(self):
-        processing.execAlgorithmDialog("Vixed:Generate SAR request form")
+        processing.execAlgorithmDialog("Vixed:Generate CHLA request")

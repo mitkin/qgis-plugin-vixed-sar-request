@@ -1,11 +1,9 @@
 {
     "interval": "24h",
-    "processor": "SAR",
+    "processor": "CHLA",
     "processor_settings": {
         "compress": "True",
-        "crs": "EPSG:3857",
-        "platformname": "Sentinel-1",
-        "producttype": "GRD",
+        "crs": "EPSG:32633",
         "roi": {
             "coordinates": [
                 [
@@ -33,8 +31,7 @@
             ],
             "type": "Polygon"
         },
-        "sensoroperationalmode": "EW",
-        "spatial_resolution": 550,
+        "spatial_resolution": 300,
         "time_delta_hours": 24
     },
     "send_to": [

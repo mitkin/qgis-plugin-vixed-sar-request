@@ -80,7 +80,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
     RESOLUTION = 'RESOLUTION'
     TIMEDELTA = 'TIMEDELTA'
     RECIPIENTS = "RECIPIENTS"
-    EXPORTCRS = "epsg:3857"
+    EXPORTCRS = "epsg:32633"
     CRS = "CRS"
     
     #
@@ -99,12 +99,12 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
 
         self.BASEDIR, self.FILENAME = os.path.split(os.path.abspath(__file__))
 
-        processors = [self.tr('SAR')]
+        processors = [self.tr('SAR'), self.tr("CHLA")]
 
         self.addParameter(QgsProcessingParameterEnum(
             self.PROCESSORS,
             self.tr('Vixed Processors'),
-            options=processors, defaultValue="SAR"))
+            options=processors, defaultValue="CHLA"))
 
         self.addParameter(
             QgsProcessingParameterExtent(
@@ -118,7 +118,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
                 self.RESOLUTION,
                 self.tr(
                     'Spatial resolution (meters per pixel)'),
-                defaultValue=500,
+                defaultValue=300,
                 minValue=50,
                 type=QgsProcessingParameterNumber.Integer
         ))
@@ -255,7 +255,7 @@ class VixedRequestsAlgorithm(QgisAlgorithm):
     def calcFileSize(self, extent, resolution, compression_ratio=100, channels_no=1):
 
         if self.CRS.upper() == "EPSG:4326":
-            pr = Proj(init="EPSG:3857")
+            pr = Proj(init="EPSG:32633")
             xmin, ymin = pr(extent.xMinimum(), extent.yMinimum())
             xmax, ymax = pr(extent.xMaximum(), extent.yMaximum())
         else:
